@@ -20,6 +20,7 @@ struct Token {
   Token *next;    // 次の入力トークン
   int val;        // kindがTK_NUMの場合、その数値
   char *str;      // トークン文字列
+  int len;        // トークンの長さ
 };
 
 // 抽象構文木のノードの種類
@@ -45,49 +46,6 @@ struct Node {
 Token *token;
 // 入力プログラム
 char *user_input;
-
-// function
-void error(char *fmt, ...);
-void error_at(char *loc, char *fmt, ...);
-bool consume(char op);
-void expect(char op);
-int expect_number();
-bool at_eof();
-Token *new_token(TokenKind kind, Token *cur, char *str);
-Token *tokenize();
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
-Node *new_node_num(int val);
-Node *expr();
-Node *mul();
-Node *unary();
-Node *primary();
-void gen(Node *node);
-
-int main(int argc, char **argv) {
-  if (argc != 2) {
-    error("引数の個数が正しくありません");
-    return 1;
-  }
-
-  // トークナイズしてパースする
-  user_input = argv[1];
-  token = tokenize();
-  Node *node = expr();
-
-  // アセンブリの前半部分を出力
-  printf(".intel_syntax noprefix\n");
-  printf(".globl main\n");
-  printf("main:\n");
-
-  // 抽象構文木を下りながらコード生成
-  gen(node);
-
-  // スタックトップに式全体の値が残っているはずなので
-  // それをRAXにロードして関数からの返り値とする
-  printf("  pop rax\n");
-  printf("  ret\n");
-  return 0;
-}
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -202,6 +160,11 @@ Node *new_node_num(int val) {
   return node;
 }
 
+Node *expr();
+Node *mul();
+Node *unary();
+Node *primary();
+
 Node *expr() {
   Node *node = mul();
 
@@ -277,4 +240,30 @@ void gen(Node *node) {
   }
 
   printf("  push rax\n");
+}
+
+int main(int argc, char **argv) {
+  if (argc != 2) {
+    error("引数の個数が正しくありません");
+    return 1;
+  }
+
+  // トークナイズしてパースする
+  user_input = argv[1];
+  token = tokenize();
+  Node *node = expr();
+
+  // アセンブリの前半部分を出力
+  printf(".intel_syntax noprefix\n");
+  printf(".globl main\n");
+  printf("main:\n");
+
+  // 抽象構文木を下りながらコード生成
+  gen(node);
+
+  // スタックトップに式全体の値が残っているはずなので
+  // それをRAXにロードして関数からの返り値とする
+  printf("  pop rax\n");
+  printf("  ret\n");
+  return 0;
 }
