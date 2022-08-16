@@ -41,5 +41,7 @@ assert 12 "a = 12;"
 assert 13 "a = 7+5*(2+1*4*3-7); b = -(3+5+a/(-2));"
 assert 20 "abc = 20;"
 assert 33 "value = -3*9-(6/3*4-20)*5; result =  -(-value/11*(4-3+2))/(-3)*(-11);"
+assert 6 "return 6;"
+assert 12 "foo = 2;  boo = 5 * 6 - 8;  return (foo + boo) / 2;"
 
 echo OK
