@@ -3,6 +3,7 @@
 char *user_input;
 Token *token;
 Node *code[100];
+LVar *locals;
 
 // エラーを報告するための関数
 // printfと同じ引数を取る
@@ -25,6 +26,7 @@ int main(int argc, char **argv) {
   // 結果はcodeに保存される
   user_input = argv[1];
   token = tokenize();
+  locals = calloc(1, sizeof(LVar));
   program();
 
   // アセンブリの前半部分を出力
@@ -36,7 +38,7 @@ int main(int argc, char **argv) {
   // 変数26個分の領域を確保する
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
+  printf("  sub rsp, %d\n", locals->offset);
 
   // 先頭の式から順にコード生成
   for (int i = 0; code[i]; i++) {

@@ -23,6 +23,11 @@ struct Token {
   int len;        // トークンの長さ
 };
 
+// 現在着目しているトークン
+extern Token *token;
+// 入力プログラム
+extern char *user_input;
+
 // 抽象構文木のノードの種類
 typedef enum {
   ND_ADD,     // +
@@ -48,12 +53,19 @@ struct Node {
   int offset;    // kindがND_LVARの場合のみ使う
 };
 
-// 現在着目しているトークン
-extern Token *token;
-// 入力プログラム
-extern char *user_input;
-
 extern Node *code[100];
+
+typedef struct LVar LVar;
+// ローカル変数の型
+struct LVar {
+  LVar *next; // 次の変数かNULL
+  char *name; // 変数の名前
+  int len;    // 名前の長さ
+  int offset; // RBPからのオフセット
+};
+
+// ローカル変数
+extern LVar *locals;
 
 void error(char *fmt, ...);
 Token *tokenize();
