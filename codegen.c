@@ -1,5 +1,9 @@
 #include "9cc.h"
 
+static int n_lend = 0;
+static int n_lelse = 0;
+static int n_lbegin = 0;
+
 static void gen_lval(Node *node) {
   if (node->kind != ND_LVAR)
     error("代入の左辺値が変数ではありません");
@@ -10,6 +14,12 @@ static void gen_lval(Node *node) {
 }
 
 void gen(Node *node) {
+  int lend;
+  int lelse;
+  int lbegin;
+
+  if(node == NULL) return;
+
   switch (node->kind) {
   case ND_NUM:
     printf("  push %d\n", node->val);
@@ -35,6 +45,58 @@ void gen(Node *node) {
     printf("  mov rsp, rbp\n");
     printf("  pop rbp\n");
     printf("  ret\n");
+    return;
+  case ND_IF:
+    gen(node->lhs);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    if (node->chd1 == NULL) {
+      n_lend++;
+      lend = n_lend;
+      printf("  je .Lend%d\n", lend);
+      gen(node->rhs);
+    } else {
+      n_lelse++;
+      lelse = n_lelse;
+      printf("  je .Lelse%d\n", lelse);
+      gen(node->rhs);
+      n_lend++;
+      lend = n_lend;
+      printf("  jmp .Lend%d\n", lend);
+      printf(".Lelse%d:\n", lelse);
+      gen(node->chd1);
+    }
+    printf(".Lend%d:\n", lend);
+    return;
+  case ND_WHILE:
+    n_lbegin++;
+    lbegin = n_lbegin;
+    printf(".Lbegin%d:\n", lbegin);
+    gen(node->lhs);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    n_lend++;
+    lend = n_lend;
+    printf("  je .Lend%d\n", lend);
+    gen(node->rhs);
+    printf("  jmp .Lbegin%d\n", lbegin);
+    printf(".Lend%d:\n", lend);
+    return;
+  case ND_FOR:
+    gen(node->lhs);
+    n_lbegin++;
+    lbegin = n_lbegin;
+    printf(".Lbegin%d:\n", lbegin);
+    gen(node->rhs);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    n_lend++;
+    lend = n_lend;
+    printf(" je .Lend%d\n", lend);
+    gen(node->chd2);
+    gen(node->chd1);
+    printf(" jmp .Lbegin%d\n", lbegin);
+    printf(".Lend%d:\n", lend);
     return;
   }
 

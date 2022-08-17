@@ -43,5 +43,10 @@ assert 20 "abc = 20;"
 assert 33 "value = -3*9-(6/3*4-20)*5; result =  -(-value/11*(4-3+2))/(-3)*(-11);"
 assert 6 "return 6;"
 assert 12 "foo = 2;  boo = 5 * 6 - 8;  return (foo + boo) / 2;"
+assert 6 "abc = 3; if ( abc == 3 ) abc = abc * 2;"
+assert 1 "a = 5; b; if (a / 5 == 1) b = 1; else b = 0; return b;"
+assert 0 "foo = 100; while (foo > 0) foo = foo - 1; return foo;"
+assert 1 "i; x = 2; for (i = 0; i < 3; i = i + 1) x = x * x; return x / 256;"
+assert 10 "a = 6; i = 0; while(i < 10) if(a / 2 == 3) i = i + 1; else i = 100; return i;"
 
 echo OK

@@ -7,9 +7,8 @@
 
 // トークンの種類
 typedef enum {
-  TK_RESERVED, // 記号
+  TK_RESERVED, // 記号と予約語
   TK_IDENT,    // 識別子
-  TK_RETURN,   // return文
   TK_NUM,      // 整数トークン
   TK_EOF,      // 入力の終わりを表すトークン
 } TokenKind;
@@ -24,11 +23,6 @@ struct Token {
   int len;        // トークンの長さ
 };
 
-// 現在着目しているトークン
-extern Token *token;
-// 入力プログラム
-extern char *user_input;
-
 // 抽象構文木のノードの種類
 typedef enum {
   ND_ADD,     // +
@@ -42,6 +36,9 @@ typedef enum {
   ND_ASSIGN,  // =
   ND_LVAR,    // ローカル変数
   ND_RETURN,  // return文
+  ND_IF,      // if文
+  ND_WHILE,   // while文
+  ND_FOR,     // for文
   ND_NUM,     // 整数
 } NodeKind;
 
@@ -49,13 +46,13 @@ typedef struct Node Node;
 // 抽象構文木のノードの型
 struct Node {
   NodeKind kind; // ノードの型
-  Node *lhs;     // 左辺
-  Node *rhs;     // 右辺
+  Node *lhs;     // 左辺（子ノード1）
+  Node *rhs;     // 右辺（子ノード2）
+  Node *chd1;    // 子ノード1（子ノード3）
+  Node *chd2;    // 子ノード2（子ノード4）
   int val;       // kindがND_NUMの場合のみ使う
   int offset;    // kindがND_LVARの場合のみ使う
 };
-
-extern Node *code[100];
 
 typedef struct LVar LVar;
 // ローカル変数の型
@@ -66,10 +63,7 @@ struct LVar {
   int offset; // RBPからのオフセット
 };
 
-// ローカル変数
-extern LVar *locals;
-
 void error(char *fmt, ...);
-Token *tokenize();
+void error_at(char *loc, char *fmt, ...);
 void program();
 void gen(Node *node);

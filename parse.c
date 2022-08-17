@@ -1,19 +1,10 @@
 #include "9cc.h"
 
-// エラー箇所を報告するための関数
-static void error_at(char *loc, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
+// 現在着目しているトークン
+Token *token;
 
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
-  fprintf(stderr, "%*s", pos, " "); // pos個の空白を出力
-  fprintf(stderr, "^ ");
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  va_end(ap);
-  exit(1);
-}
+Node *code[100];
+extern LVar *locals;
 
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
@@ -52,79 +43,7 @@ static int expect_number() {
   return val;
 }
 
-static bool at_eof() {
-  return token->kind == TK_EOF;
-}
-
-// 新しいトークンを作成してcurに繋げる
-static Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
-  Token *tok = calloc(1, sizeof(Token));
-  tok->kind = kind;
-  tok->str = str;
-  tok->len = len;
-  cur->next = tok;
-  return tok;
-}
-
-// 与えられた文字がトークンを構成する文字かどうかを判定する
-static bool is_alnum(char c) {
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
-         ('0' <= c && c <= '9') || (c == '_');
-}
-
-// 入力文字列pをトークナイズしてそれを返す
-Token *tokenize() {
-  char *p = user_input;
-  Token head;
-  head.next = NULL;
-  Token *cur = &head;
-
-  while (*p) {
-    // 空白文字をスキップ
-    if (isspace(*p)) {
-      p++;
-      continue;
-    }
-
-    if (strncmp(p, "==", 2) == 0 || strncmp(p, "!=", 2) == 0 ||
-        strncmp(p, "<=", 2) == 0 || strncmp(p, ">=", 2) == 0) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p += 2;
-      continue;
-    }
-
-    if (strchr("+-*/()<>=;", *p) != NULL) {
-      cur = new_token(TK_RESERVED, cur, p++, 1);
-      continue;
-    }
-
-    if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
-      cur = new_token(TK_RETURN, cur, p, 6);
-      p += 6;
-      continue;
-    }
-
-    if (('a' <= *p && *p <= 'z') || ('A' <= *p && *p <= 'Z') || (*p == '_')) {
-      char *q = p++;
-      for (; is_alnum(*p); p++);
-      cur = new_token(TK_IDENT, cur, q, p - q);
-      continue;
-    }
-
-    if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p, 0);
-      char *q = p;
-      cur->val = strtol(p, &p, 10);
-      cur->len = p - q;
-      continue;
-    }
-
-    error_at(p, "トークナイズできません");
-  }
-
-  new_token(TK_EOF, cur, p, 0);
-  return head.next;
-}
+static bool at_eof() { return token->kind == TK_EOF;}
 
 static Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -161,22 +80,51 @@ void program() {
 Node *stmt() {
   Node *node;
 
-  if (token->kind == TK_RETURN) {
-    token = token->next;
+  if (consume("return")) {
+    node = new_node(ND_RETURN, expr(), NULL);
+    expect(";");
+  } else if (consume("if")) {
     node = calloc(1, sizeof(Node));
-    node->kind = ND_RETURN;
+    node->kind = ND_IF;
+    expect("(");
     node->lhs = expr();
+    expect(")");
+    node->rhs = stmt();
+    if (consume("else"))
+      node->chd1 = stmt();
+  } else if (consume("while")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_WHILE;
+    expect("(");
+    node->lhs = expr();
+    expect(")");
+    node->rhs = stmt();
+  } else if (consume("for")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+    expect("(");
+    if(!consume(";")) {
+      node->lhs = expr();
+      expect(";");
+    }
+    if(!consume(";")) {
+      node->rhs = expr();
+      expect(";");
+    }
+    if(!consume(")")) {
+      node->chd1 = expr();
+      expect(")");
+    }
+    node->chd2 = stmt();
   } else {
     node = expr();
+    expect(";");
   }
 
-  expect(";");
   return node;
 }
 
-Node *expr() {
-  return assign();
-}
+Node *expr() { return assign();}
 
 Node *assign() {
   Node *node = equality();
