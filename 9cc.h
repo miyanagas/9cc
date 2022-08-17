@@ -39,19 +39,21 @@ typedef enum {
   ND_IF,      // if文
   ND_WHILE,   // while文
   ND_FOR,     // for文
+  ND_BLOCK,   // ブロック
   ND_NUM,     // 整数
 } NodeKind;
 
 typedef struct Node Node;
 // 抽象構文木のノードの型
 struct Node {
-  NodeKind kind; // ノードの型
-  Node *lhs;     // 左辺（子ノード1）
-  Node *rhs;     // 右辺（子ノード2）
-  Node *chd1;    // 子ノード1（子ノード3）
-  Node *chd2;    // 子ノード2（子ノード4）
-  int val;       // kindがND_NUMの場合のみ使う
-  int offset;    // kindがND_LVARの場合のみ使う
+  NodeKind kind;    // ノードの型
+  Node *lhs;        // 左辺（子ノード1）
+  Node *rhs;        // 右辺（子ノード2）
+  Node *chd3;       // 子ノード3
+  Node *chd4;       // 子ノード4
+  int val;          // kindがND_NUMの場合のみ使う
+  int offset;       // kindがND_LVARの場合のみ使う
+  Node *code[100];  // kindがND_BLOCKの場合のみ使う
 };
 
 typedef struct LVar LVar;

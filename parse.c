@@ -3,9 +3,6 @@
 // 現在着目しているトークン
 Token *token;
 
-Node *code[100];
-extern LVar *locals;
-
 // 次のトークンが期待している記号のときには、トークンを1つ読み進めて
 // 真を返す。それ以外の場合には偽を返す。
 static bool consume(char *op) {
@@ -60,6 +57,22 @@ static Node *new_node_num(int val) {
   return node;
 }
 
+// program    = stmt*
+// stmt       = expr ";"
+//            | "{" stmt* "}"
+//            | "if" "(" expr ")" stmt ("else" stmt)?
+//            | "while" "(" expr ")" stmt
+//            | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//            | "return" expr ";"
+// expr       = assign
+// assign     = equality ("=" assign)?
+// equality   = relational ("==" relational | "!=" relational)*
+// relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+// add        = mul ("+" mul | "-" mul)*
+// mul        = unary ("*" unary | "/" unary)*
+// unary      = ("+" | "-")? primary
+// primary    = num | ident | "(" expr ")"
+
 static Node *stmt();
 static Node *expr();
 static Node *assign();
@@ -69,6 +82,8 @@ static Node *add();
 static Node *mul();
 static Node *unary();
 static Node *primary();
+
+Node *code[100];
 
 void program() {
   int i = 0;
@@ -91,7 +106,7 @@ Node *stmt() {
     expect(")");
     node->rhs = stmt();
     if (consume("else"))
-      node->chd1 = stmt();
+      node->chd3 = stmt();
   } else if (consume("while")) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_WHILE;
@@ -103,19 +118,26 @@ Node *stmt() {
     node = calloc(1, sizeof(Node));
     node->kind = ND_FOR;
     expect("(");
-    if(!consume(";")) {
+    if (!consume(";")) {
       node->lhs = expr();
       expect(";");
     }
-    if(!consume(";")) {
+    if (!consume(";")) {
       node->rhs = expr();
       expect(";");
     }
-    if(!consume(")")) {
-      node->chd1 = expr();
+    if (!consume(")")) {
+      node->chd3 = expr();
       expect(")");
     }
-    node->chd2 = stmt();
+    node->chd4 = stmt();
+  } else if (consume("{")) {
+    node = new_node(ND_BLOCK, NULL, NULL);
+    int i = 0;
+    while (!consume("}")) {
+      node->code[i++] = stmt();
+    }
+    node->code[i] = NULL;
   } else {
     node = expr();
     expect(";");
@@ -136,7 +158,7 @@ Node *assign() {
 Node *equality() {
   Node *node = relational();
 
-  for(;;) {
+  for (;;) {
     if (consume("=="))
       node = new_node(ND_EQ, node, relational());
     else if (consume("!="))
@@ -149,7 +171,7 @@ Node *equality() {
 Node *relational() {
   Node *node = add();
 
-  for(;;) {
+  for (;;) {
     if (consume("<"))
       node = new_node(ND_LT, node, add());
     else if (consume("<="))
@@ -196,6 +218,8 @@ Node *unary() {
     return new_node(ND_SUB, new_node_num(0), primary());
   return primary();
 }
+
+extern LVar *locals;
 
 // 変数を名前で検索する。見つからなかった場合はNULLを返す。
 static LVar *find_lvar(Token *tok) {

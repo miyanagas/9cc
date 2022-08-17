@@ -48,5 +48,12 @@ assert 1 "a = 5; b; if (a / 5 == 1) b = 1; else b = 0; return b;"
 assert 0 "foo = 100; while (foo > 0) foo = foo - 1; return foo;"
 assert 1 "i; x = 2; for (i = 0; i < 3; i = i + 1) x = x * x; return x / 256;"
 assert 10 "a = 6; i = 0; while(i < 10) if(a / 2 == 3) i = i + 1; else i = 100; return i;"
+assert 6 "a = 3; b = 3; c = 0; if (1 == 1) c = a + b; else c = a - b; return c;"
+assert 5 "a = 3; b = 2; c = 0; if (c == 0) c = a + b; return c;"
+assert 9 "a = 4; b = 5; c = 0; {c = a + b;} return c;"
+assert 0 "a = 0; b = 0; c = 0; if (c == 0) { a = 3; b = 2; c = a + b; } return c - a - b;"
+assert 240 "x = 2; a = 2; for (i = 0; i < 3; i = i + 1) { x = x * x; a = a + a; } return x - a;"
+assert 100 "a = 0; foo = 0; while (a < 10) { a = a + 1; foo = foo + 2 * a; } return foo - a;"
+assert 7 "a = 0; b = 0; c = 0; if (c == 0) { a = 4; b = 3; c = a + b; } else { a = 2; b = 2; c = a - b;} return c;"
 
 echo OK
