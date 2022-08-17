@@ -16,6 +16,24 @@ assert() {
   fi
 }
 
+assert_() {
+  expected="$1"
+  input="$2"
+
+  ./9cc "$input" > tmp.s
+  cc -c foo.c
+  cc -o tmp tmp.s foo.o
+  ./tmp
+  actual="$?"
+
+  if [ "$actual" = "$expected" ]; then
+    echo "$input => $actual"
+  else
+    echo "$input => $expected expected, but got $actual"
+    exit 1
+  fi
+}
+
 assert 0 "0;"
 assert 42 "42;"
 assert 21 "5+20-4;"
@@ -55,5 +73,7 @@ assert 0 "a = 0; b = 0; c = 0; if (c == 0) { a = 3; b = 2; c = a + b; } return c
 assert 240 "x = 2; a = 2; for (i = 0; i < 3; i = i + 1) { x = x * x; a = a + a; } return x - a;"
 assert 100 "a = 0; foo = 0; while (a < 10) { a = a + 1; foo = foo + 2 * a; } return foo - a;"
 assert 7 "a = 0; b = 0; c = 0; if (c == 0) { a = 4; b = 3; c = a + b; } else { a = 2; b = 2; c = a - b;} return c;"
+assert_ 2 "a = 1; b = 1; foo(); return a+b;"
+assert_ 4 "a = 4; b = 5; boo(a, b); return a;"
 
 echo OK

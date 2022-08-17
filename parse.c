@@ -71,7 +71,7 @@ static Node *new_node_num(int val) {
 // add        = mul ("+" mul | "-" mul)*
 // mul        = unary ("*" unary | "/" unary)*
 // unary      = ("+" | "-")? primary
-// primary    = num | ident | "(" expr ")"
+// primary    = num | ident ("(" (add ("," add)*)? ")")? | "(" expr ")"
 
 static Node *stmt();
 static Node *expr();
@@ -104,9 +104,9 @@ Node *stmt() {
     expect("(");
     node->lhs = expr();
     expect(")");
-    node->rhs = stmt();
+    node->lhs->bro = stmt();
     if (consume("else"))
-      node->chd3 = stmt();
+      node->lhs->bro->bro = stmt();
   } else if (consume("while")) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_WHILE;
@@ -123,14 +123,14 @@ Node *stmt() {
       expect(";");
     }
     if (!consume(";")) {
-      node->rhs = expr();
+      node->lhs->bro = expr();
       expect(";");
     }
     if (!consume(")")) {
-      node->chd3 = expr();
+      node->lhs->bro->bro = expr();
       expect(")");
     }
-    node->chd4 = stmt();
+    node->lhs->bro->bro->bro = stmt();
   } else if (consume("{")) {
     node = new_node(ND_BLOCK, NULL, NULL);
     int i = 0;
@@ -240,6 +240,18 @@ Node *primary() {
   Token *tok = consume_ident();
   if (tok) {
     Node *node = calloc(1, sizeof(Node));
+    if (consume("(")) {
+      node->kind = ND_FUNC;
+      node->name = tok->str;
+      node->len = tok->len;
+      if (!consume(")")) {
+        node->lhs = add();
+        for (Node *nod = node->lhs; consume(","); nod = nod->bro)
+          nod->bro = add();
+        expect(")");
+      }
+      return node;
+    }
     node->kind = ND_LVAR;
 
     LVar *lvar = find_lvar(tok);

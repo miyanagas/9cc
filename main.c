@@ -71,7 +71,7 @@ static Token *tokenize() {
       continue;
     }
 
-    if (strchr("+-*/()<>=;{}", *p) != NULL) {
+    if (strchr("+-*/()<>=;{},", *p) != NULL) {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -140,7 +140,7 @@ int main(int argc, char **argv) {
   token = tokenize();
   locals = calloc(1, sizeof(LVar));
   program();
-
+  
   // アセンブリの前半部分を出力
   printf(".intel_syntax noprefix\n");
   printf(".globl main\n");
@@ -149,6 +149,7 @@ int main(int argc, char **argv) {
   // プロローグ
   // 変数の領域を確保する
   printf("  push rbp\n");
+  push();
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, %d\n", locals->offset);
 
@@ -158,13 +159,17 @@ int main(int argc, char **argv) {
 
     // 式の評価結果としてスタックに一つの値が残っている
     // はずなので、スタックが溢れないようにポップしておく
-    printf("  pop rax\n");
+    if (code[i]->kind != ND_FUNC) {
+      printf("  pop rax\n");
+      pop();
+    }
   }
 
   // エピローグ
   // 最後の式の結果がRAXに残っているのでそれが返り値になる
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
+  pop();
   printf("  ret\n");
   return 0;
 }

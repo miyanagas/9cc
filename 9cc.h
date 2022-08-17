@@ -35,6 +35,7 @@ typedef enum {
   ND_LE,      // <=
   ND_ASSIGN,  // =
   ND_LVAR,    // ローカル変数
+  ND_FUNC,    // 関数
   ND_RETURN,  // return文
   ND_IF,      // if文
   ND_WHILE,   // while文
@@ -49,10 +50,11 @@ struct Node {
   NodeKind kind;    // ノードの型
   Node *lhs;        // 左辺（子ノード1）
   Node *rhs;        // 右辺（子ノード2）
-  Node *chd3;       // 子ノード3
-  Node *chd4;       // 子ノード4
+  Node *bro;        // 兄弟ノード
   int val;          // kindがND_NUMの場合のみ使う
   int offset;       // kindがND_LVARの場合のみ使う
+  char *name;       // kindがND_FUNCの場合のみ使う
+  int len;          // kindがND_FUNCの場合のみ使う
   Node *code[100];  // kindがND_BLOCKの場合のみ使う
 };
 
@@ -64,6 +66,11 @@ struct LVar {
   int len;    // 名前の長さ
   int offset; // RBPからのオフセット
 };
+
+extern int rsp;
+
+#define push() rsp - 8
+#define pop() rsp + 8
 
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
